@@ -51,6 +51,7 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 			authParts := strings.Split(authHeader, " ")
 			if len(authParts) >= 2 && strings.EqualFold(authParts[0], "Bearer") {
 				token := authParts[1]
+				lc.Infof("Authing with token: %s", token)
 				validToken, err := secretProvider.IsJWTValid(token)
 				if err != nil {
 					lc.Errorf("Error checking JWT validity: %v", err)
