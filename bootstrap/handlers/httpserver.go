@@ -147,26 +147,25 @@ func (b *HttpServer) BootstrapHandler(
 		b.isRunning = true
 
 		var ln net.Listener
-		switch bootstrapConfig.Service.ListenOptions["ListenMode"] {
+		switch bootstrapConfig.Service.SecurityOptions["ListenMode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
-			jwt, err := secretProvider.GetSelfJWT()
-			if err != nil {
-				lc.Errorf("could not load jwt: %v", err)
+			jwt, jwtErr := secretProvider.GetSelfJWT()
+			if jwtErr != nil {
+				lc.Errorf("could not load jwt: %v", jwtErr)
 			}
 			lc.Info("using zerotrust - look at you go: " + jwt)
 
-			caPool, err := ziti.GetControllerWellKnownCaPool("https://" + bootstrapConfig.Service.ListenOptions["OpenZitiController"])
-
-			if err != nil {
-				panic(err)
+			caPool, caErr := ziti.GetControllerWellKnownCaPool("https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"])
+			if caErr != nil {
+				panic(caErr)
 			}
 
 			credentials := edge_apis.NewJwtCredentials(jwt)
 			credentials.CaPool = caPool
 
 			cfg := &ziti.Config{
-				ZtAPI:       "https://" + bootstrapConfig.Service.ListenOptions["OpenZitiController"] + "/edge/client/v1",
+				ZtAPI:       "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"] + "/edge/client/v1",
 				Credentials: credentials,
 			}
 			cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
@@ -182,7 +181,7 @@ func (b *HttpServer) BootstrapHandler(
 				panic(err)
 			}
 
-			serviceName := bootstrapConfig.Service.ListenOptions["OpenZitiServiceName"]
+			serviceName := bootstrapConfig.Service.SecurityOptions["OpenZitiServiceName"]
 			ln, err = ctx.Listen(serviceName)
 
 			if err != nil {

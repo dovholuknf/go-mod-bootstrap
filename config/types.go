@@ -64,9 +64,9 @@ type ServiceInfo struct {
 	RequestTimeout string
 	// CORSConfiguration defines the cross-origin resource sharing related settings
 	CORSConfiguration CORSConfigurationInfo
-	// ListenOptions is a key/value map, used for configuring a listening server. currently used for zero trust but
-	// could be for all the options
-	ListenOptions map[string]string
+	// SecurityOptions is a key/value map, used for configuring an http listener. Currently used for zero trust but
+	// could be for other options
+	SecurityOptions map[string]string
 }
 
 // HealthCheck is a URL specifying a health check REST endpoint used by the Registry to determine if the
