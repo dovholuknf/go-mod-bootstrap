@@ -64,6 +64,10 @@ type ServiceInfo struct {
 	RequestTimeout string
 	// CORSConfiguration defines the cross-origin resource sharing related settings
 	CORSConfiguration CORSConfigurationInfo
+	// ListenMode defines the listen mode the server will enter. Options are "http" or "zerotrust"
+	ListenMode string
+	// ListenOptions is a key/value map, used for configuring the server depending on the ListenMode supplied
+	ListenOptions map[string]string
 }
 
 // HealthCheck is a URL specifying a health check REST endpoint used by the Registry to determine if the
@@ -136,6 +140,8 @@ type ClientInfo struct {
 	Protocol string
 	// UseMessageBus indicates weather to use Messaging version of client
 	UseMessageBus bool
+	// SecurityOptions represents a map for client configuration for additional security related configuration
+	SecurityOptions map[string]string
 }
 
 func (c ClientInfo) Url() string {
