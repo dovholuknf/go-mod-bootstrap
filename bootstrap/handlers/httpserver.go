@@ -147,7 +147,7 @@ func (b *HttpServer) BootstrapHandler(
 		b.isRunning = true
 
 		var ln net.Listener
-		switch bootstrapConfig.Service.ListenMode {
+		switch bootstrapConfig.Service.ListenOptions["ListenMode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
 			jwt, err := secretProvider.GetSelfJWT()

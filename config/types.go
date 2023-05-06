@@ -64,9 +64,8 @@ type ServiceInfo struct {
 	RequestTimeout string
 	// CORSConfiguration defines the cross-origin resource sharing related settings
 	CORSConfiguration CORSConfigurationInfo
-	// ListenMode defines the listen mode the server will enter. Options are "http" or "zerotrust"
-	ListenMode string
-	// ListenOptions is a key/value map, used for configuring the server depending on the ListenMode supplied
+	// ListenOptions is a key/value map, used for configuring a listening server. currently used for zero trust but
+	// could be for all the options
 	ListenOptions map[string]string
 }
 
