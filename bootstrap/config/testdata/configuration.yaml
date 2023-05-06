@@ -24,7 +24,7 @@ all-services:
       
   Service:
     HealthCheckInterval: "10s"
-    Host: "localhost"
+    Host: "localhost35"
     ServerBindAddr: "" # Leave blank so default to Host value unless different value is needed.
     MaxResultCount: 1024
     MaxRequestSize: 0 # Not currently used. Defines the maximum size of http request body in bytes
@@ -39,19 +39,19 @@ all-services:
       CORSMaxAge: 3600
 
   Registry:
-    Host: "localhost"
+    Host: "localhost36"
     Port: 8500
     Type: "consul"
   
   Database:
-    Host: "localhost"
+    Host: "localhost37"
     Port: 6379
     Timeout: 5000
     Type: "redisdb"
   
   MessageBus:
     Protocol: "redis"
-    Host: "localhost"
+    Host: "localhost38"
     Port: 6379
     Type: "redis"
     AuthMode: "usernamepassword"  # required for redis MessageBus (secure or insecure).
@@ -93,7 +93,7 @@ app-services:
   Clients:
     core-metadata:
       Protocol: "http"
-      Host: "localhost"
+      Host: "localhost39"
       Port: 59881
   Trigger:
     Type: "edgex-messagebus"
@@ -111,7 +111,7 @@ device-services:
   Clients:
     core-metadata:
       Protocol: "http"
-      Host: "localhost"
+      Host: "localhost40"
       Port: 59881
   Device:
     DataTransform: true

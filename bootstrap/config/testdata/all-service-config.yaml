@@ -24,34 +24,34 @@ all-services:
       
   Service:
     HealthCheckInterval: "10s"
-    Host: "localhost"
+    Host: "localhost1"
     ServerBindAddr: "" # Leave blank so default to Host value unless different value is needed.
     MaxResultCount: 1024
     MaxRequestSize: 0 # Not currently used. Defines the maximum size of http request body in bytes
     RequestTimeout: "5s"
     CORSConfiguration:
-      EnableCORS: false
+      EnableCORS: true
       CORSAllowCredentials: false
-      CORSAllowedOrigin: "https://localhost"
+      CORSAllowedOrigin: "https://*.edgex.ziti"
       CORSAllowedMethods: "GET, POST, PUT, PATCH, DELETE"
       CORSAllowedHeaders: "Authorization, Accept, Accept-Language, Content-Language, Content-Type, X-Correlation-ID"
       CORSExposeHeaders: "Cache-Control, Content-Language, Content-Length, Content-Type, Expires, Last-Modified, Pragma, X-Correlation-ID"
       CORSMaxAge: 3600
 
   Registry:
-    Host: "localhost"
+    Host: "localhost2"
     Port: 8500
     Type: "consul"
   
   Database:
-    Host: "localhost"
+    Host: "localhost3"
     Port: 6379
     Timeout: 5000
     Type: "redisdb"
   
   MessageBus:
     Protocol: "redis"
-    Host: "localhost"
+    Host: "localhost4"
     Port: 6379
     Type: "redis"
     AuthMode: "usernamepassword"  # required for redis MessageBus (secure or insecure).

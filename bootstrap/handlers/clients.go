@@ -33,6 +33,10 @@ import (
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/secret"
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/startup"
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/di"
+
+	"github.com/openziti/edge-api/rest_util"
+	edge_apis "github.com/openziti/sdk-golang/edge-apis"
+	"github.com/openziti/sdk-golang/ziti"
 )
 
 // ClientsBootstrap contains data to boostrap the configured clients
@@ -68,6 +72,36 @@ func (cb *ClientsBootstrap) BootstrapHandler(
 			var url string
 			var err error
 
+			if serviceInfo.SecurityOptions != nil && serviceInfo.SecurityOptions["Mode"] == "zerotrust" {
+
+				lc.Info("zero trust client? phancy!")
+
+				secretProvider := container.SecretProviderExtFrom(dic.Get)
+				jwt, err := secretProvider.GetSelfJWT()
+				if err != nil {
+					lc.Errorf("could not load jwt: %v", err)
+				}
+				openZitiRootUrl := "https://" + serviceInfo.SecurityOptions["OpenZitiController"]
+				caPool, err := rest_util.GetControllerWellKnownCaPool(openZitiRootUrl)
+				if err != nil {
+					panic(err)
+				}
+
+				credentials := edge_apis.NewJwtCredentials(jwt)
+				credentials.CaPool = caPool
+				cfg := &ziti.Config{
+					ZtAPI:       openZitiRootUrl + "/edge/client/v1",
+					Credentials: credentials,
+				}
+				cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
+				ctx, err := ziti.NewContext(cfg)
+
+				if err = ctx.Authenticate(); err != nil {
+					lc.Errorf("could not authenticate: %v", err)
+					panic(err)
+				}
+				ziti.DefaultCollection.Add(ctx)
+			}
 			if !serviceInfo.UseMessageBus {
 				url, err = cb.getClientUrl(serviceKey, serviceInfo.Url(), startupTimer, lc)
 				if err != nil {
@@ -156,6 +190,7 @@ func (cb *ClientsBootstrap) BootstrapHandler(
 			}
 		}
 	}
+
 	return true
 }
 
