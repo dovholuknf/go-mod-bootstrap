@@ -64,8 +64,8 @@ type ServiceInfo struct {
 	RequestTimeout string
 	// CORSConfiguration defines the cross-origin resource sharing related settings
 	CORSConfiguration CORSConfigurationInfo
-	// SecurityOptions is a key/value map, used for configuring an http listener. Currently used for zero trust but
-	// could be for other options
+	// SecurityOptions is a key/value map, used for configuring hosted services. Currently used for zero trust but
+	// could be for other options additional security related configuration
 	SecurityOptions map[string]string
 }
 
@@ -139,7 +139,8 @@ type ClientInfo struct {
 	Protocol string
 	// UseMessageBus indicates weather to use Messaging version of client
 	UseMessageBus bool
-	// SecurityOptions represents a map for client configuration for additional security related configuration
+	// SecurityOptions is a key/value map, used for configuring clients. Currently used for zero trust but
+	// could be for other options additional security related configuration
 	SecurityOptions map[string]string
 }
 
