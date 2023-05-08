@@ -155,8 +155,9 @@ func (b *HttpServer) BootstrapHandler(
 				lc.Errorf("could not load jwt: %v", jwtErr)
 			}
 			lc.Info("using zerotrust - look at you go: " + jwt)
+			openZitiRootUrl := "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
 
-			caPool, caErr := ziti.GetControllerWellKnownCaPool("https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"])
+			caPool, caErr := ziti.GetControllerWellKnownCaPool(openZitiRootUrl)
 			if caErr != nil {
 				panic(caErr)
 			}
@@ -165,24 +166,23 @@ func (b *HttpServer) BootstrapHandler(
 			credentials.CaPool = caPool
 
 			cfg := &ziti.Config{
-				ZtAPI:       "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"] + "/edge/client/v1",
+				ZtAPI:       openZitiRootUrl + "/edge/client/v1",
 				Credentials: credentials,
 			}
 			cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
-			ctx, err := ziti.NewContext(cfg)
 
-			if err != nil {
-				panic(err)
+			zitiCtx, ctxErr := ziti.NewContext(cfg)
+			if ctxErr != nil {
+				panic(ctxErr)
 			}
 
-			err = ctx.Authenticate()
-
-			if err != nil {
-				panic(err)
+			authErr := zitiCtx.Authenticate()
+			if authErr != nil {
+				panic(authErr)
 			}
 
 			serviceName := bootstrapConfig.Service.SecurityOptions["OpenZitiServiceName"]
-			ln, err = ctx.Listen(serviceName)
+			ln, err = zitiCtx.Listen(serviceName)
 
 			if err != nil {
 				log.Panicf("could not bind service %s: %v", serviceName, err)
