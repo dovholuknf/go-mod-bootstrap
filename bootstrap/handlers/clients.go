@@ -17,6 +17,7 @@ package handlers
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"sync"
 	"time"
@@ -33,6 +34,9 @@ import (
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/secret"
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/startup"
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/di"
+
+	edge_apis "github.com/openziti/sdk-golang/edge-apis"
+	"github.com/openziti/sdk-golang/ziti"
 )
 
 // ClientsBootstrap contains data to boostrap the configured clients
@@ -68,6 +72,23 @@ func (cb *ClientsBootstrap) BootstrapHandler(
 			var url string
 			var err error
 
+			if serviceInfo.SecurityOptions != nil && serviceInfo.SecurityOptions["Mode"] == "zerotrust" {
+
+				lc.Info("zero trust client? phancy!")
+
+				secretProvider := container.SecretProviderExtFrom(dic.Get)
+				jwt, errJwt := secretProvider.GetSelfJWT()
+				if errJwt != nil {
+					lc.Errorf("could not load jwt: %v", err)
+				}
+				openZitiRootUrl := "https://" + serviceInfo.SecurityOptions["OpenZitiController"]
+				caPool, caErr := ziti.GetControllerWellKnownCaPool("https://" + serviceInfo.SecurityOptions["OpenZitiController"])
+				if caErr != nil {
+					panic(caErr)
+				}
+
+				_ = AuthToOpenZiti(openZitiRootUrl, jwt, caPool)
+			}
 			if !serviceInfo.UseMessageBus {
 				url, err = cb.getClientUrl(serviceKey, serviceInfo.Url(), startupTimer, lc)
 				if err != nil {
@@ -156,7 +177,25 @@ func (cb *ClientsBootstrap) BootstrapHandler(
 			}
 		}
 	}
+
 	return true
+}
+
+func AuthToOpenZiti(openZitiRootUrl, jwt string, caPool *x509.CertPool) ziti.Context {
+	credentials := edge_apis.NewJwtCredentials(jwt)
+	credentials.CaPool = caPool
+	cfg := &ziti.Config{
+		ZtAPI:       openZitiRootUrl + "/edge/client/v1",
+		Credentials: credentials,
+	}
+	cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
+	ctx, err := ziti.NewContext(cfg)
+
+	if err = ctx.Authenticate(); err != nil {
+		panic(err)
+	}
+	ziti.DefaultCollection.Add(ctx)
+	return ctx
 }
 
 func (cb *ClientsBootstrap) getClientUrl(serviceKey string, defaultUrl string, startupTimer startup.Timer, lc logger.LoggingClient) (string, error) {

@@ -19,6 +19,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,6 +36,9 @@ import (
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/di"
 
 	"github.com/gorilla/mux"
+
+	edge_apis "github.com/openziti/sdk-golang/edge-apis"
+	"github.com/openziti/sdk-golang/ziti"
 )
 
 // HttpServer contains references to dependencies required by the http server implementation.
@@ -140,7 +145,57 @@ func (b *HttpServer) BootstrapHandler(
 		}()
 
 		b.isRunning = true
-		err := server.ListenAndServe()
+
+		var ln net.Listener
+		switch bootstrapConfig.Service.SecurityOptions["ListenMode"] {
+		case "zerotrust":
+			secretProvider := container.SecretProviderExtFrom(dic.Get)
+			jwt, jwtErr := secretProvider.GetSelfJWT()
+			if jwtErr != nil {
+				lc.Errorf("could not load jwt: %v", jwtErr)
+			}
+			lc.Info("using zerotrust - look at you go: " + jwt)
+			openZitiRootUrl := "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
+
+			caPool, caErr := ziti.GetControllerWellKnownCaPool(openZitiRootUrl)
+			if caErr != nil {
+				panic(caErr)
+			}
+
+			credentials := edge_apis.NewJwtCredentials(jwt)
+			credentials.CaPool = caPool
+
+			cfg := &ziti.Config{
+				ZtAPI:       openZitiRootUrl + "/edge/client/v1",
+				Credentials: credentials,
+			}
+			cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
+
+			zitiCtx, ctxErr := ziti.NewContext(cfg)
+			if ctxErr != nil {
+				panic(ctxErr)
+			}
+
+			authErr := zitiCtx.Authenticate()
+			if authErr != nil {
+				panic(authErr)
+			}
+
+			serviceName := bootstrapConfig.Service.SecurityOptions["OpenZitiServiceName"]
+			ln, err = zitiCtx.Listen(serviceName)
+
+			if err != nil {
+				log.Panicf("could not bind service %s: %v", serviceName, err)
+			}
+		case "http":
+		default:
+			lc.Warn("using ListenMode 'http'")
+			ln, err = net.Listen("tcp", addr)
+		}
+		if err == nil {
+			err = server.Serve(ln)
+		}
+
 		// "Server closed" error occurs when Shutdown above is called in the Done processing, so it can be ignored
 		if err != nil && err != http.ErrServerClosed {
 			// Other errors occur during bootstrapping, like port bind fails, are considered fatal
