@@ -244,7 +244,7 @@ func (b *HttpServer) BootstrapHandler(
 			lc.Warn("using ListenMode 'http'")
 			ln, err = net.Listen("tcp", addr)
 		}
-		//server.ConnContext = mutator
+		server.ConnContext = mutator
 
 		if err == nil {
 			err = server.Serve(ln)

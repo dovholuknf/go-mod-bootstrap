@@ -56,7 +56,7 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 				zc := *zitiCtx.(*ziti.Context)
 				zi, _ := zc.GetCurrentIdentity()
 
-				lc.Debugf("Authorizing incoming connection via OpenZiti for %s", *zi.Name)
+				lc.Infof("Authorizing incoming connection via OpenZiti for %s", *zi.Name)
 				inner(w, r)
 
 				return
@@ -66,7 +66,7 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 			if zitiCtx != nil {
 				zitiEdgeConn := zitiCtx.(edge.Conn)
 
-				lc.Debugf("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
+				lc.Infof("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
 				inner(w, r)
 				return
 			}
