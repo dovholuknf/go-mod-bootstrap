@@ -15,6 +15,8 @@
 package handlers
 
 import (
+	"github.com/openziti/sdk-golang/ziti"
+	"github.com/openziti/sdk-golang/ziti/edge"
 	"net/http"
 	"os"
 	"strconv"
@@ -48,6 +50,27 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 		return func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			lc.Debugf("Authorizing incoming call to '%s' via JWT (Authorization len=%d)", r.URL.Path, len(authHeader))
+
+			zitiCtx := r.Context().Value("zitiContext")
+			if zitiCtx != nil {
+				zc := *zitiCtx.(*ziti.Context)
+				zi, _ := zc.GetCurrentIdentity()
+
+				lc.Debugf("Authorizing incoming connection via OpenZiti for %s", *zi.Name)
+				inner(w, r)
+
+				return
+			}
+
+			zitiCtx = r.Context().Value("zero.trust.identityName")
+			if zitiCtx != nil {
+				zitiEdgeConn := zitiCtx.(edge.Conn)
+
+				lc.Debugf("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
+				inner(w, r)
+				return
+			}
+
 			authParts := strings.Split(authHeader, " ")
 			if len(authParts) >= 2 && strings.EqualFold(authParts[0], "Bearer") {
 				token := authParts[1]

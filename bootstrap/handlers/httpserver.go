@@ -19,11 +19,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/openziti/sdk-golang/ziti/edge"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -62,6 +64,10 @@ func NewHttpServer(router *mux.Router, doListenAndServe bool) *HttpServer {
 // processed (e.g. a database connection).
 func (b *HttpServer) IsRunning() bool {
 	return b.isRunning
+}
+
+type ZitiContext struct {
+	c *ziti.Context
 }
 
 // BootstrapHandler fulfills the BootstrapHandler contract.  It creates two go routines -- one that executes ListenAndServe()
@@ -106,10 +112,28 @@ func (b *HttpServer) BootstrapHandler(
 		lc.Errorf("unable to parse RequestTimeout value of %s to a duration: %v", bootstrapConfig.Service.RequestTimeout, err)
 		return false
 	}
-
+	/*
+		ca := &ContextAdapter{
+			ctx:     context.Background(),
+			handler: middleware(ContextHandlerFunc(handler)),
+		}
+		b.router.Use(func(next http.Handler) http.Handler {
+			return ca
+		})
+	*/
 	b.router.Use(func(next http.Handler) http.Handler {
 		return http.TimeoutHandler(next, timeout, "HTTP request timeout")
 	})
+
+	//ziti
+	//zitisecretProvider := container.SecretProviderExtFrom(dic.Get)
+	//zitiauthenticationHook := AutoConfigAuthenticationFunc(secretProvider, lc)
+	//zitivv := authenticationHook(bbb)
+	//zitib.router.Use(AuthenticatingHandler(vv))
+
+	zc := &ZitiContext{}
+
+	b.router.Use(HandleOpenZiti(zc))
 
 	b.router.Use(RequestLimitMiddleware(bootstrapConfig.Service.MaxRequestSize, lc))
 
@@ -150,48 +174,78 @@ func (b *HttpServer) BootstrapHandler(
 		switch bootstrapConfig.Service.SecurityOptions["ListenMode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
-			jwt, jwtErr := secretProvider.GetSelfJWT()
-			if jwtErr != nil {
-				lc.Errorf("could not load jwt: %v", jwtErr)
-			}
-			lc.Info("using zerotrust - look at you go: " + jwt)
-			openZitiRootUrl := "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
+			var zitiCtx ziti.Context
+			var ctxErr error
+			if secretProvider != nil {
+				jwt, jwtErr := secretProvider.GetSelfJWT()
+				if jwtErr != nil {
+					lc.Errorf("could not load jwt: %v", jwtErr)
+				}
+				lc.Info("using zerotrust - look at you go: " + jwt)
+				openZitiRootUrl := "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
 
-			caPool, caErr := ziti.GetControllerWellKnownCaPool(openZitiRootUrl)
-			if caErr != nil {
-				panic(caErr)
-			}
+				caPool, caErr := ziti.GetControllerWellKnownCaPool(openZitiRootUrl)
+				if caErr != nil {
+					panic(caErr)
+				}
 
-			credentials := edge_apis.NewJwtCredentials(jwt)
-			credentials.CaPool = caPool
+				credentials := edge_apis.NewJwtCredentials(jwt)
+				credentials.CaPool = caPool
 
-			cfg := &ziti.Config{
-				ZtAPI:       openZitiRootUrl + "/edge/client/v1",
-				Credentials: credentials,
-			}
-			cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
+				cfg := &ziti.Config{
+					ZtAPI:       openZitiRootUrl + "/edge/client/v1",
+					Credentials: credentials,
+				}
+				cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
 
-			zitiCtx, ctxErr := ziti.NewContext(cfg)
-			if ctxErr != nil {
-				panic(ctxErr)
-			}
+				zitiCtx, ctxErr = ziti.NewContext(cfg)
+				if ctxErr != nil {
+					panic(ctxErr)
+				}
+			} else {
+				ozIdFile := bootstrapConfig.Service.SecurityOptions["OpenZitiIdentityFile"]
+				if strings.TrimSpace(ozIdFile) == "" {
+					/*
+						openZitiRootUrl := "https://" + config.Service.SecurityOptions["OpenZitiController"]
+						jwtSecretProvider := secret.NewJWTSecretProvider(container.SecretProviderExtFrom(dic.Get))
+						config.di
+						jwt := ""
 
-			authErr := zitiCtx.Authenticate()
-			if authErr != nil {
-				panic(authErr)
+						caPool, caErr := ziti.GetControllerWellKnownCaPool(openZitiRootUrl)
+						if caErr != nil {
+							panic(caErr)
+						}
+						ctx := handlers.AuthToOpenZiti(openZitiRootUrl, jwt, caPool)
+
+						authErr := zitiCtx.Authenticate()
+						if authErr != nil {
+							panic(authErr)
+						}
+					*/
+				} else {
+					zitiCtx, ctxErr = ziti.LoadContext(ozIdFile)
+					if ctxErr != nil {
+						panic(ctxErr)
+					}
+				}
+
+				ziti.DefaultCollection.Add(zitiCtx)
 			}
 
 			serviceName := bootstrapConfig.Service.SecurityOptions["OpenZitiServiceName"]
 			ln, err = zitiCtx.Listen(serviceName)
-
 			if err != nil {
 				log.Panicf("could not bind service %s: %v", serviceName, err)
 			}
+
+			zc.c = &zitiCtx
 		case "http":
 		default:
 			lc.Warn("using ListenMode 'http'")
 			ln, err = net.Listen("tcp", addr)
 		}
+		//server.ConnContext = mutator
+
 		if err == nil {
 			err = server.Serve(ln)
 		}
@@ -217,6 +271,13 @@ func (b *HttpServer) BootstrapHandler(
 	return true
 }
 
+func mutator(srcCtx context.Context, c net.Conn) context.Context {
+	if zitiConn, ok := c.(edge.Conn); ok {
+		return context.WithValue(srcCtx, "zero.trust.identityName", zitiConn)
+	}
+	return srcCtx
+}
+
 // RequestLimitMiddleware is a middleware function that limits the request body size to Service.MaxRequestSize in kilobytes
 func RequestLimitMiddleware(sizeLimit int64, lc logger.LoggingClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -240,6 +301,21 @@ func RequestLimitMiddleware(sizeLimit int64, lc logger.LoggingClient) func(http.
 				// ignore the other http methods because they do not have request bodies
 				next.ServeHTTP(w, r)
 			}
+		})
+	}
+}
+
+func HandleOpenZiti(zitiCtx *ZitiContext) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if zitiCtx != nil {
+				if zitiCtx.c != nil {
+					//newCtx := context.WithValue(r.Context(), "zitiContext", zitiCtx.c)
+					//r = r.WithContext(newCtx)
+				}
+			}
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }
