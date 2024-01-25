@@ -15,7 +15,10 @@
 package container
 
 import (
+	"fmt"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
+	"github.com/sirupsen/logrus"
+	"io"
 
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/di"
 )
@@ -31,4 +34,50 @@ func LoggingClientFrom(get di.Get) logger.LoggingClient {
 	}
 
 	return loggingClient
+}
+
+type LogrusAdaptor struct {
+	lc logger.LoggingClient
+}
+
+func (f *LogrusAdaptor) Format(entry *logrus.Entry) ([]byte, error) {
+	// Implement your custom formatting logic here
+	return []byte(fmt.Sprintf("[%s] %s\n", entry.Level, entry.Message)), nil
+}
+
+func (f *LogrusAdaptor) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+func (f *LogrusAdaptor) Fire(e *logrus.Entry) error {
+	switch e.Level {
+	case logrus.DebugLevel:
+		f.lc.Debug(e.Message)
+	case logrus.InfoLevel:
+		f.lc.Info(e.Message)
+	case logrus.WarnLevel:
+		f.lc.Warn(e.Message)
+	case logrus.ErrorLevel:
+		f.lc.Error(e.Message)
+	case logrus.FatalLevel:
+		f.lc.Error(e.Message)
+	case logrus.PanicLevel:
+		f.lc.Error(e.Message)
+	}
+
+	return nil
+}
+
+func AdaptLogrusBasedLogging(dic *di.Container) {
+	l := LoggingClientFrom(dic.Get)
+	// Create a new logger instance
+	hook := &LogrusAdaptor{
+		lc: l,
+	}
+	logrus.AddHook(hook)
+	logrus.SetFormatter(&logrus.TextFormatter{
+		DisableColors: true,
+	})
+	logrus.SetOutput(io.Discard)
+	logrus.Info("This is an info message")
+	logrus.Warn("This is a warning message")
 }
