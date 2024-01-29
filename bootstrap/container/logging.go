@@ -78,6 +78,4 @@ func AdaptLogrusBasedLogging(dic *di.Container) {
 		DisableColors: true,
 	})
 	logrus.SetOutput(io.Discard)
-	logrus.Info("This is an info message")
-	logrus.Warn("This is a warning message")
 }
