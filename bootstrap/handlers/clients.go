@@ -58,12 +58,15 @@ func (cb *ClientsBootstrap) BootstrapHandler(
 	lc := container.LoggingClientFrom(dic.Get)
 	config := container.ConfigurationFrom(dic.Get)
 	cb.registry = container.RegistryFrom(dic.Get)
-	jwtSecretProvider := secret.NewJWTSecretProvider(container.SecretProviderExtFrom(dic.Get))
 
 	if config.GetBootstrap().Clients != nil {
 		for serviceKey, serviceInfo := range *config.GetBootstrap().Clients {
 			var url string
 			var err error
+
+			sp := container.SecretProviderExtFrom(dic.Get)
+			jwtSecretProvider := secret.NewJWTSecretProvider(sp)
+			sp.SetHttpTransport(container.HttpTransportFromClient(sp, serviceInfo, lc))
 
 			if !serviceInfo.UseMessageBus {
 				url, err = cb.getClientUrl(serviceKey, serviceInfo.Url(), startupTimer, dic, lc)

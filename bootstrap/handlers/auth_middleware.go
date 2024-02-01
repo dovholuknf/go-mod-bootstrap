@@ -22,12 +22,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
-
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/interfaces"
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/secret"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
 
 	"github.com/labstack/echo/v4"
+	"github.com/openziti/sdk-golang/ziti"
+	"github.com/openziti/sdk-golang/ziti/edge"
 )
 
 // VaultAuthenticationHandlerFunc prefixes an existing HandlerFunc
@@ -54,6 +55,24 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 			w := c.Response()
 			authHeader := r.Header.Get("Authorization")
 			lc.Debugf("Authorizing incoming call to '%s' via JWT (Authorization len=%d)", r.URL.Path, len(authHeader))
+
+			zitiCtx := r.Context().Value("zitiContext")
+			if zitiCtx != nil {
+				zc := *zitiCtx.(*ziti.Context)
+				zi, _ := zc.GetCurrentIdentity()
+
+				lc.Infof("Authorizing incoming connection via OpenZiti for %s", *zi.Name)
+				return inner(c)
+			}
+
+			zitiCtx = r.Context().Value("zero.trust.identityName")
+			if zitiCtx != nil {
+				zitiEdgeConn := zitiCtx.(edge.Conn)
+
+				lc.Infof("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
+				return inner(c)
+			}
+
 			authParts := strings.Split(authHeader, " ")
 			if len(authParts) >= 2 && strings.EqualFold(authParts[0], "Bearer") {
 				token := authParts[1]
