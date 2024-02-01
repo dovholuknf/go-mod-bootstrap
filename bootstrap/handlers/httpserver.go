@@ -170,6 +170,11 @@ func (b *HttpServer) BootstrapHandler(
 		b.isRunning = true
 
 		var ln net.Listener
+		lc.Warn("START   ")
+		for _, elem := range bootstrapConfig.Service.SecurityOptions {
+			lc.Warn(fmt.Sprintf("%v, ", elem))
+		}
+		lc.Warn("STARTEND")
 		switch bootstrapConfig.Service.SecurityOptions["Mode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
@@ -223,7 +228,7 @@ func (b *HttpServer) BootstrapHandler(
 			zc.c = &zitiCtx
 		case "http":
 		default:
-			lc.Warnf("using ListenMode 'http' at %s", addr)
+			lc.Warnf("using ListenMode1 'http' at %s", addr)
 			ln, err = net.Listen("tcp", addr)
 		}
 		server.ConnContext = mutator
