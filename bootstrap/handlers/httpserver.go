@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	edge_apis "github.com/openziti/sdk-golang/edge-apis"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/openziti/sdk-golang/ziti/edge"
@@ -39,7 +40,6 @@ import (
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/startup"
 	"github.com/edgexfoundry/go-mod-bootstrap/v3/di"
 
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
@@ -170,11 +170,15 @@ func (b *HttpServer) BootstrapHandler(
 		b.isRunning = true
 
 		var ln net.Listener
-		lc.Warn("START   ")
+		lc.Warn("===============================START   ")
+		lc.Warn("===============================START   ")
+		lc.Warn("===============================START   ")
 		for _, elem := range bootstrapConfig.Service.SecurityOptions {
 			lc.Warn(fmt.Sprintf("%v, ", elem))
 		}
-		lc.Warn("STARTEND")
+		lc.Warn("===============================STARTEND")
+		lc.Warn("===============================STARTEND")
+		lc.Warn("===============================STARTEND")
 		switch bootstrapConfig.Service.SecurityOptions["Mode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)

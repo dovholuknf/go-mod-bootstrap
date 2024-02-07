@@ -53,19 +53,29 @@ func isZeroTrust(secOpts map[string]string) bool {
 
 func HttpTransportFromService(secretProvider interfaces.SecretProviderExt, serviceInfo config.ServiceInfo, lc logger.LoggingClient) http.RoundTripper {
 	roundTripper := http.DefaultTransport
+	not := "NOT"
 	if isZeroTrust(serviceInfo.SecurityOptions) {
 		lc.Infof("zero trust client detected for service: %s", serviceInfo.Host)
 		roundTripper = createZitifiedTransport(secretProvider, serviceInfo.SecurityOptions[OpenZitiControllerKey], lc)
+		not = "YES!"
 	}
+	lc.Warnf("%s USING ZERO TRUST: %s", not, serviceInfo.Host)
+	lc.Warnf("%s USING ZERO TRUST: %s", not, serviceInfo.Host)
 	return roundTripper
 }
 
 func HttpTransportFromClient(secretProvider interfaces.SecretProviderExt, clientInfo *config.ClientInfo, lc logger.LoggingClient) http.RoundTripper {
 	roundTripper := http.DefaultTransport
+	not := "NOT"
 	if isZeroTrust(clientInfo.SecurityOptions) {
 		lc.Infof("zero trust client detected for client: %s", clientInfo.Host)
 		roundTripper = createZitifiedTransport(secretProvider, clientInfo.SecurityOptions[OpenZitiControllerKey], lc)
+		not = "YES!"
 	}
+	lc.Warnf("%s USING ZERO TRUST: %s", not, clientInfo.Host)
+	lc.Warnf("%s USING ZERO TRUST: %s", not, clientInfo.Host)
+	lc.Warnf("%s USING ZERO TRUST: %s", not, clientInfo.Host)
+	lc.Warnf("%s USING ZERO TRUST: %s", not, clientInfo.Host)
 	return roundTripper
 }
 
@@ -82,6 +92,7 @@ func createZitifiedTransport(secretProvider interfaces.SecretProviderExt, ozCont
 
 	zitiTransport := http.DefaultTransport.(*http.Transport).Clone() // copy default transport
 	zitiTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		lc.Infof("ZITI DIALING: %s", addr)
 		dialer := zitiContexts.NewDialerWithFallback(ctx /*&net.Dialer{}*/, nil)
 		return dialer.Dial(network, addr)
 	}
