@@ -48,20 +48,23 @@ func (f *LogrusAdaptor) Format(entry *logrus.Entry) ([]byte, error) {
 func (f *LogrusAdaptor) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
+
+const OPENZITI_LOG_FORMAT = "openziti: %s"
+
 func (f *LogrusAdaptor) Fire(e *logrus.Entry) error {
 	switch e.Level {
 	case logrus.DebugLevel:
-		f.lc.Debug(e.Message)
+		f.lc.Debugf(OPENZITI_LOG_FORMAT, e.Message)
 	case logrus.InfoLevel:
-		f.lc.Info(e.Message)
+		f.lc.Infof(OPENZITI_LOG_FORMAT, e.Message)
 	case logrus.WarnLevel:
-		f.lc.Warn(e.Message)
+		f.lc.Warnf(OPENZITI_LOG_FORMAT, e.Message)
 	case logrus.ErrorLevel:
-		f.lc.Error(e.Message)
+		f.lc.Errorf(OPENZITI_LOG_FORMAT, e.Message)
 	case logrus.FatalLevel:
-		f.lc.Error(e.Message)
+		f.lc.Errorf(OPENZITI_LOG_FORMAT, e.Message)
 	case logrus.PanicLevel:
-		f.lc.Error(e.Message)
+		f.lc.Errorf(OPENZITI_LOG_FORMAT, e.Message)
 	}
 
 	return nil

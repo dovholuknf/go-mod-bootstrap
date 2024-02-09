@@ -82,12 +82,12 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dovholuknf/go-mod-core-contracts/v3 v3.0.0-20240202194122-2e273c4e8201 h1:z+XjU/5O1gsBo8Bmlr7D/zUetglxerhMukVmfmK5toU=
+github.com/dovholuknf/go-mod-core-contracts/v3 v3.0.0-20240202194122-2e273c4e8201/go.mod h1:mTP3luRqJKsudxayDmlkT+oWQATJ9L020pdQ8kCzmgM=
 github.com/eclipse/paho.mqtt.golang v1.4.3 h1:2kwcUGn8seMUfWndX0hGbvH8r7crgcJguQNCyp70xik=
 github.com/eclipse/paho.mqtt.golang v1.4.3/go.mod h1:CSYvoAlsMkhYOXh/oKyxa8EcBci6dVkLCbo5tTC1RIE=
 github.com/edgexfoundry/go-mod-configuration/v3 v3.2.0-dev.2 h1:71C39GPP7nbxa5GTOqoc1eAXbogoie1DCYCLBQo71t0=
 github.com/edgexfoundry/go-mod-configuration/v3 v3.2.0-dev.2/go.mod h1:+RykcMAHe6rluqJSKOAy+EwtzaeSc/qbxRYdtY2vA0g=
-github.com/edgexfoundry/go-mod-core-contracts/v3 v3.2.0-dev.6 h1:t2prkk6kptw210I7vBFUWGbytECviWmEBbw+rW69COI=
-github.com/edgexfoundry/go-mod-core-contracts/v3 v3.2.0-dev.6/go.mod h1:qNcJi4k0NdB2LmfOmSw5Is1SNooJZy558LdzhEGhm9A=
 github.com/edgexfoundry/go-mod-messaging/v3 v3.2.0-dev.8 h1:g2ZKc9R1nZVTBibaWT98yKyNFbaCdtX+/SFkAJ0SIGY=
 github.com/edgexfoundry/go-mod-messaging/v3 v3.2.0-dev.8/go.mod h1:apThgnlJn5+34KmBKc10r8Owx4CybRCCo0UVEU0PVVg=
 github.com/edgexfoundry/go-mod-registry/v3 v3.2.0-dev.2 h1:Fj2CLjWB8I0KSjysV5oITrFlPI82K5aJXMt0/ZPC+/4=

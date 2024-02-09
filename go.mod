@@ -140,6 +140,4 @@ require (
 	nhooyr.io/websocket v1.8.10 // indirect
 )
 
-replace github.com/edgexfoundry/go-mod-bootstrap/v3 => github.com/dovholuknf/go-mod-bootstrap/v3 v3.0.0-20240201185813-2ccf2b8516a0
-
-replace github.com/edgexfoundry/go-mod-core-contracts/v3 => github.com/dovholuknf/go-mod-core-contracts/v3 wip
+replace github.com/edgexfoundry/go-mod-core-contracts/v3 => github.com/dovholuknf/go-mod-core-contracts/v3 v3.0.0-20240202194122-2e273c4e8201
