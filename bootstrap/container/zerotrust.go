@@ -92,7 +92,6 @@ func createZitifiedTransport(secretProvider interfaces.SecretProviderExt, ozCont
 
 	zitiTransport := http.DefaultTransport.(*http.Transport).Clone() // copy default transport
 	zitiTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		lc.Infof("ZITI DIALING: %s", addr)
 		dialer := zitiContexts.NewDialerWithFallback(ctx /*&net.Dialer{}*/, nil)
 		return dialer.Dial(network, addr)
 	}
