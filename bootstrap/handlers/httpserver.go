@@ -169,7 +169,6 @@ func (b *HttpServer) BootstrapHandler(
 
 		b.isRunning = true
 
-		var ln net.Listener
 		switch bootstrapConfig.Service.SecurityOptions["Mode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
@@ -207,23 +206,25 @@ func (b *HttpServer) BootstrapHandler(
 			}
 
 			serviceName := bootstrapConfig.Service.SecurityOptions["OpenZitiServiceName"]
-			ln, err = zitiCtx.Listen(serviceName)
-			if err != nil {
-				err = fmt.Errorf("could not bind service " + serviceName + ": " + err.Error())
+			ln, listenErr := zitiCtx.Listen(serviceName)
+			if listenErr != nil {
+				err = fmt.Errorf("could not bind service " + serviceName + ": " + listenErr.Error())
 				break
 			}
 
 			zc.c = &zitiCtx
+			err = server.Serve(ln)
 		case "http":
 		default:
 			lc.Warnf("using ListenMode1 'http' at %s", addr)
-			ln, err = net.Listen("tcp", addr)
-		}
-		server.ConnContext = mutator
-
-		if err == nil {
+			ln, listenErr := net.Listen("tcp", addr)
+			if listenErr != nil {
+				err = listenErr
+				break
+			}
 			err = server.Serve(ln)
 		}
+		server.ConnContext = mutator
 
 		// "Server closed" error occurs when Shutdown above is called in the Done processing, so it can be ignored
 		if err != nil && err != http.ErrServerClosed {

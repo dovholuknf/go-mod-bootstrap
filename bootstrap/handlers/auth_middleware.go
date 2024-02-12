@@ -59,9 +59,12 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 			zitiCtx := r.Context().Value("zitiContext")
 			if zitiCtx != nil {
 				zc := *zitiCtx.(*ziti.Context)
-				zi, _ := zc.GetCurrentIdentity()
-
-				lc.Infof("Authorizing incoming connection via OpenZiti for %s", *zi.Name)
+				if zi, err := zc.GetCurrentIdentity(); err != nil {
+					lc.Warnf("Could not verify incoming connection via OpenZiti for %s", *zi.Name)
+					return echo.NewHTTPError(http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+				} else {
+					lc.Debugf("Authorizing incoming connection via OpenZiti for %s", *zi.Name)
+				}
 				return inner(c)
 			}
 
@@ -69,7 +72,7 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 			if zitiCtx != nil {
 				zitiEdgeConn := zitiCtx.(edge.Conn)
 
-				lc.Infof("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
+				lc.Debugf("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
 				return inner(c)
 			}
 
