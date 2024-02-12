@@ -54,8 +54,8 @@ func isZeroTrust(secOpts map[string]string) bool {
 func HttpTransportFromClient(secretProvider interfaces.SecretProviderExt, clientInfo *config.ClientInfo, lc logger.LoggingClient) (http.RoundTripper, error) {
 	roundTripper := http.DefaultTransport
 	if isZeroTrust(clientInfo.SecurityOptions) {
-		lc.Infof("zero trust client detected for client: %s", clientInfo.Host)
-		if rt, err := createZitifiedTransport(secretProvider, clientInfo.SecurityOptions[OpenZitiControllerKey], lc); err != nil {
+		lc.Debugf("zero trust client detected for client: %s", clientInfo.Host)
+		if rt, err := createZitifiedTransport(secretProvider, clientInfo.SecurityOptions[OpenZitiControllerKey]); err != nil {
 			return nil, err
 		} else {
 			roundTripper = rt
@@ -64,7 +64,7 @@ func HttpTransportFromClient(secretProvider interfaces.SecretProviderExt, client
 	return roundTripper, nil
 }
 
-func createZitifiedTransport(secretProvider interfaces.SecretProviderExt, ozController string, lc logger.LoggingClient) (http.RoundTripper, error) {
+func createZitifiedTransport(secretProvider interfaces.SecretProviderExt, ozController string) (http.RoundTripper, error) {
 	jwt, errJwt := secretProvider.GetSelfJWT()
 	if errJwt != nil {
 		return nil, fmt.Errorf("could not load jwt: %v", errJwt)

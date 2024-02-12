@@ -19,6 +19,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	edge_apis "github.com/openziti/sdk-golang/edge-apis"
@@ -172,6 +173,10 @@ func (b *HttpServer) BootstrapHandler(
 		switch bootstrapConfig.Service.SecurityOptions["Mode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
+			if secretProvider == nil {
+				err = errors.New("secret provider is nil. cannot proceed with zero trust configuration")
+				break
+			}
 			var zitiCtx ziti.Context
 			var ctxErr error
 			jwt, jwtErr := secretProvider.GetSelfJWT()
