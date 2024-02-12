@@ -170,63 +170,47 @@ func (b *HttpServer) BootstrapHandler(
 		b.isRunning = true
 
 		var ln net.Listener
-		lc.Warn("===============================START   ")
-		lc.Warn("===============================START   ")
-		lc.Warn("===============================START   ")
-		for _, elem := range bootstrapConfig.Service.SecurityOptions {
-			lc.Warn(fmt.Sprintf("%v, ", elem))
-		}
-		lc.Warn("===============================STARTEND")
-		lc.Warn("===============================STARTEND")
-		lc.Warn("===============================STARTEND")
 		switch bootstrapConfig.Service.SecurityOptions["Mode"] {
 		case "zerotrust":
 			secretProvider := container.SecretProviderExtFrom(dic.Get)
 			var zitiCtx ziti.Context
 			var ctxErr error
-			if secretProvider != nil {
-				jwt, jwtErr := secretProvider.GetSelfJWT()
-				if jwtErr != nil {
-					lc.Errorf("could not load jwt: %v", jwtErr)
-				}
-				lc.Info("using zerotrust - look at you go: " + jwt)
-				openZitiRootUrl := "https://" + bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
-				caPool, caErr := ziti.GetControllerWellKnownCaPool(openZitiRootUrl)
-				if caErr != nil {
-					panic(caErr)
-				}
+			jwt, jwtErr := secretProvider.GetSelfJWT()
+			if jwtErr != nil {
+				lc.Errorf("could not load jwt: %v", jwtErr)
+				err = jwtErr
+				break
+			}
+			ozUrl := bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
+			if !strings.Contains(ozUrl, "://") {
+				ozUrl = "https://" + ozUrl
+			}
+			caPool, caErr := ziti.GetControllerWellKnownCaPool(ozUrl)
+			if caErr != nil {
+				err = caErr
+				break
+			}
 
-				credentials := edge_apis.NewJwtCredentials(jwt)
-				credentials.CaPool = caPool
+			credentials := edge_apis.NewJwtCredentials(jwt)
+			credentials.CaPool = caPool
 
-				cfg := &ziti.Config{
-					ZtAPI:       openZitiRootUrl + "/edge/client/v1",
-					Credentials: credentials,
-				}
-				cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
+			cfg := &ziti.Config{
+				ZtAPI:       ozUrl + "/edge/client/v1",
+				Credentials: credentials,
+			}
+			cfg.ConfigTypes = append(cfg.ConfigTypes, "all")
 
-				zitiCtx, ctxErr = ziti.NewContext(cfg)
-				if ctxErr != nil {
-					panic(ctxErr)
-				}
-			} else {
-				ozIdFile := bootstrapConfig.Service.SecurityOptions["OpenZitiIdentityFile"]
-				if strings.TrimSpace(ozIdFile) == "" {
-					panic("here?")
-				} else {
-					zitiCtx, ctxErr = ziti.LoadContext(ozIdFile)
-					if ctxErr != nil {
-						panic(ctxErr)
-					}
-				}
-
-				ziti.DefaultCollection.Add(zitiCtx)
+			zitiCtx, ctxErr = ziti.NewContext(cfg)
+			if ctxErr != nil {
+				err = ctxErr
+				break
 			}
 
 			serviceName := bootstrapConfig.Service.SecurityOptions["OpenZitiServiceName"]
 			ln, err = zitiCtx.Listen(serviceName)
 			if err != nil {
-				panic("could not bind service " + serviceName + ": " + err.Error())
+				err = fmt.Errorf("could not bind service " + serviceName + ": " + err.Error())
+				break
 			}
 
 			zc.c = &zitiCtx

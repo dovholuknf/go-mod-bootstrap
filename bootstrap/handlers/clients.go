@@ -18,6 +18,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap/zerotrust"
 	"sync"
 	"time"
 
@@ -66,7 +67,12 @@ func (cb *ClientsBootstrap) BootstrapHandler(
 
 			sp := container.SecretProviderExtFrom(dic.Get)
 			jwtSecretProvider := secret.NewJWTSecretProvider(sp)
-			sp.SetHttpTransport(container.HttpTransportFromClient(sp, serviceInfo, lc))
+			if rt, transpErr := zerotrust.HttpTransportFromClient(sp, serviceInfo, lc); transpErr != nil {
+				lc.Errorf("could not obtain an http client for use with zero trust provider: %v", transpErr)
+				return false
+			} else {
+				sp.SetHttpTransport(rt)
+			}
 
 			if !serviceInfo.UseMessageBus {
 				url, err = cb.getClientUrl(serviceKey, serviceInfo.Url(), startupTimer, dic, lc)
