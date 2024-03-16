@@ -150,6 +150,7 @@ func (b *HttpServer) BootstrapHandler(
 		Handler:           b.router,
 		ReadHeaderTimeout: 5 * time.Second, // G112: A configured ReadHeaderTimeout in the http.Server averts a potential Slowloris Attack
 	}
+	server.ConnContext = mutator
 
 	wg.Add(1)
 	go func() {
@@ -233,7 +234,6 @@ func (b *HttpServer) BootstrapHandler(
 			}
 			err = server.Serve(ln)
 		}
-		server.ConnContext = mutator
 
 		// "Server closed" error occurs when Shutdown above is called in the Done processing, so it can be ignored
 		if err != nil && err != http.ErrServerClosed {
