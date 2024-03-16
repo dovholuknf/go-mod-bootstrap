@@ -57,12 +57,20 @@ func VaultAuthenticationHandlerFunc(secretProvider interfaces.SecretProviderExt,
 			lc.Debugf("Authorizing incoming call to '%s' via JWT (Authorization len=%d), %v", r.URL.Path, len(authHeader), secretProvider.IsZeroTrustEnabled())
 
 			if secretProvider.IsZeroTrustEnabled() {
+				lc.Debugf("2Authorizing incoming call to '%s' via JWT (Authorization len=%d), %v", r.URL.Path, len(authHeader), secretProvider.IsZeroTrustEnabled())
+
 				zitiCtx := r.Context().Value(OpenZitiIdentityKey{})
 				if zitiCtx != nil {
+					lc.Debugf("3Authorizing incoming call to '%s' via JWT (Authorization len=%d), %v", r.URL.Path, len(authHeader), secretProvider.IsZeroTrustEnabled())
+
 					zitiEdgeConn := zitiCtx.(edge.Conn)
 
 					lc.Debugf("Authorizing incoming connection via OpenZiti for %s", zitiEdgeConn.SourceIdentifier())
 					return inner(c)
+				} else {
+
+					lc.Debugf("4Authorizing incoming call to '%s' via JWT (Authorization len=%d), %v", r.URL.Path, len(authHeader), secretProvider.IsZeroTrustEnabled())
+
 				}
 			}
 
