@@ -285,7 +285,10 @@ func RequestLimitMiddleware(sizeLimit int64, lc logger.LoggingClient) echo.Middl
 
 func mutator(srcCtx context.Context, c net.Conn) context.Context {
 	if zitiConn, ok := c.(edge.Conn); ok {
+		fmt.Println("xxxx in the ifff")
 		return context.WithValue(srcCtx, OpenZitiIdentityKey{}, zitiConn)
+	} else {
+		fmt.Println("xxx in the else")
 	}
 	return srcCtx
 }
