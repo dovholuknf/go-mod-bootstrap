@@ -191,6 +191,7 @@ func (b *HttpServer) BootstrapHandler(
 				err = jwtErr
 				break
 			}
+			lc.Errorf("JWT: %s", jwt)
 			ozUrl := bootstrapConfig.Service.SecurityOptions["OpenZitiController"]
 			if !strings.Contains(ozUrl, "://") {
 				ozUrl = "https://" + ozUrl
