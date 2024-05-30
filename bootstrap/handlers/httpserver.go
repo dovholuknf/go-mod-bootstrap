@@ -82,7 +82,7 @@ func (b *HttpServer) IsRunning() bool {
 func (b *HttpServer) BootstrapHandler(
 	ctx context.Context,
 	wg *sync.WaitGroup,
-	_ startup.Timer,
+	t startup.Timer,
 	dic *di.Container) bool {
 
 	lc := container.LoggingClientFrom(dic.Get)
@@ -218,10 +218,23 @@ func (b *HttpServer) BootstrapHandler(
 
 			ozServiceName := zerotrust.OpenZitiServicePrefix + b.serverKey
 			lc.Infof("Using OpenZiti service name: %s", ozServiceName)
-			ln, listenErr := zitiCtx.Listen(ozServiceName)
-			if listenErr != nil {
-				err = fmt.Errorf("could not bind service " + ozServiceName + ": " + listenErr.Error())
-				break
+			for t.HasNotElapsed() {
+				ln, listenErr := zitiCtx.Listen(ozServiceName)
+				if listenErr != nil {
+					err = fmt.Errorf("could not bind service " + ozServiceName + ": " + listenErr.Error())
+					break
+				}
+				t.SleepForInterval()
+			}
+
+			for startupTimer.HasNotElapsed() {
+				endpoint, err = cb.registry.GetServiceEndpoint(serviceKey)
+				if err == nil {
+					break
+				}
+
+				lc.Warnf("unable to Get service endpoint for '%s': %s. retrying...", serviceKey, err.Error())
+				startupTimer.SleepForInterval()
 			}
 
 			zc.c = &zitiCtx
