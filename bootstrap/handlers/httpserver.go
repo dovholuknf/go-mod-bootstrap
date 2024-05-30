@@ -222,24 +222,14 @@ func (b *HttpServer) BootstrapHandler(
 				ln, listenErr := zitiCtx.Listen(ozServiceName)
 				if listenErr != nil {
 					err = fmt.Errorf("could not bind service " + ozServiceName + ": " + listenErr.Error())
+					t.SleepForInterval()
+				} else {
+					zc.c = &zitiCtx
+					lc.Infof("listening on overlay network. ListenMode '%s' at %s", listenMode, addr)
+					err = server.Serve(ln)
 					break
 				}
-				t.SleepForInterval()
 			}
-
-			for startupTimer.HasNotElapsed() {
-				endpoint, err = cb.registry.GetServiceEndpoint(serviceKey)
-				if err == nil {
-					break
-				}
-
-				lc.Warnf("unable to Get service endpoint for '%s': %s. retrying...", serviceKey, err.Error())
-				startupTimer.SleepForInterval()
-			}
-
-			zc.c = &zitiCtx
-			lc.Infof("listening on overlay network. ListenMode '%s' at %s", listenMode, addr)
-			err = server.Serve(ln)
 		case "http":
 			fallthrough
 		default:
