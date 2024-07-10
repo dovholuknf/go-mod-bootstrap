@@ -1,8 +1,6 @@
 module github.com/edgexfoundry/go-mod-bootstrap/v3
 
-go 1.22
-
-toolchain go1.22.1
+go 1.21
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
